@@ -3,7 +3,7 @@ import yaml
 import csv
 import numpy as np
 
-
+# convert yaml input file into dictionary node file and graph edge file.
 def prepare_data(yaml_input, dict_node_file, graph_file):
 
     pairs = yaml.load(open(yaml_input,'r'))
@@ -24,27 +24,27 @@ def prepare_data(yaml_input, dict_node_file, graph_file):
         list_edge.append(edge)
     
     with open(graph_file, "wb") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, delimiter='\t')
         writer.writerows(list_edge)
 
-
-
+# save dictionary to csv
 def save_dict_to_csv(dict_node_file,node_names):
     with open(dict_node_file, 'wb') as csv_file:
-        writer = csv.writer(csv_file)
+        writer = csv.writer(csv_file, delimiter='\t')
         for key, value in node_names.items():
             writer.writerow([key, value])
 
+# load dictionary file to dict object.
 def load_nodes(dict_node_file):
     with open(dict_node_file, 'rb') as csv_file:
         reader = csv.reader(csv_file)
         dict_ids = dict(reader)
     return dict_ids
 
-
-def creat_graph(nodes_file, egdes_files):
+# Creat graph from node, edge file.
+def creat_graph(nodes_file, edges_files):
     nodes = load_nodes(nodes_file)
-    edges = np.genfromtxt(egdes_files,delimiter=',', dtype=int)
+    edges = np.genfromtxt(edges_files,delimiter=',', dtype=int)
     
     graph = snap.TUNGraph.New()
     for key, node in nodes.items():
@@ -58,6 +58,8 @@ def creat_graph(nodes_file, egdes_files):
     
     return graph
 
+# Comunity detect from graph use: Girvan Newman or CNM
+# Return list_comunity and modularity
 def comunityDetect(graph):
 
     CmtyV = snap.TCnComV()
@@ -74,28 +76,57 @@ def comunityDetect(graph):
     
     return list_comunity, modularity
 
-def visualize_graph(list_comunity):
-    
-    graph = snap.LoadEdgeList(snap.PUNGraph, "edges.csv", 0, 1, ',')
+# Visualize graph, make color all comunity
+def visualize_graph(file_egdes, file_img, list_comunity):
+
+    graph = snap.LoadEdgeList(snap.PUNGraph, file_egdes, 0, 1, '\t')
     NIdColorH = snap.TIntStrH()
-    colors = ["red", "yellow", "brown", "blue", "green", "pink", "indigo", "antiquewhite","chocolate", "purple" ]
-
+    colors = ["red", "yellow", "brown", "blue", "green", "pink", "indigo", "antiquewhite","chocolate", "purple", "sienna4", "powderblue", "violet" ]
+    num_color = len(colors)
     for i, comunity in enumerate(list_comunity):
-        index = i%9
-        for node in comunity:
-            NIdColorH[node] = colors[index]
+        if len(comunity) ==1:
+            NIdColorH[comunity[0]]= "white" 
+        else:
+            index = i%num_color
+            for node in comunity:
+                NIdColorH[node] = colors[index]
 
-    snap.DrawGViz(graph, snap.gvlNeato, "graph_small.png", "graph visualize", True, NIdColorH)
+    snap.DrawGViz(graph, snap.gvlNeato, file_img, "graph visualize", True, NIdColorH)
 
 
-# prepare_data("friends_list.yaml", "output/dict_bigdata.csv", "output/edges_bigdata.csv")
+def extract_top_nodes(edges_big_file, edges_extracted_file, top_n):
 
-graph = snap.LoadEdgeList(snap.PUNGraph, "edges.csv", 0, 1, ',')
+    graph = snap.LoadEdgeList(snap.PUNGraph, edges_big_file , 0, 1, '\t')
+    total_node = graph.GetNodes()
+    num_remove = total_node - top_n
+
+    # Get page rank to extract top n:
+    PRankH = snap.TIntFltH()
+    snap.GetPageRank(graph, PRankH)
+    list_prank = []
+    for item in PRankH:
+        list_prank.append([item, PRankH[item]])
+    
+    list_prank = sorted(list_prank, key=lambda x: x[1]) # Sort by page rank
+    remove_node = list_prank[: num_remove]
+
+    for node in remove_node:
+        graph.DelNode(node[0])
+    snap.SaveEdgeList(graph, edges_extracted_file)
+
+
+# prepare_data("bigdata/friends_list.yaml", "bigdata/dict_bigdata.csv", "bigdata/edges_bigdata.csv")
+
+edges_file = "edges_extracted.csv"
+extract_top_nodes("bigdata/edges_bigdata.csv", edges_file, 100)
+
+graph = snap.LoadEdgeList(snap.PUNGraph, edges_file, 0, 1, '\t')
 # graph.Dump()  #show graph information
 
 list_comunity , modularity = comunityDetect(graph)
 
 print "list comunity: ", list_comunity
+print "len list comunity: ", len(list_comunity)
 print "Modularity of the network: %f" % modularity
 
-visualize_graph(list_comunity)
+visualize_graph(edges_file,"graph-100nodes.png", list_comunity)
