@@ -74,17 +74,28 @@ def comunityDetect(graph):
     
     return list_comunity, modularity
 
+def visualize_graph(list_comunity):
+    
+    graph = snap.LoadEdgeList(snap.PUNGraph, "edges.csv", 0, 1, ',')
+    NIdColorH = snap.TIntStrH()
+    colors = ["red", "yellow", "brown", "blue", "green", "pink", "indigo", "antiquewhite","chocolate", "purple" ]
+
+    for i, comunity in enumerate(list_comunity):
+        index = i%9
+        for node in comunity:
+            NIdColorH[node] = colors[index]
+
+    snap.DrawGViz(graph, snap.gvlNeato, "graph_small.png", "graph visualize", True, NIdColorH)
+
 
 # prepare_data("friends_list.yaml", "output/dict_bigdata.csv", "output/edges_bigdata.csv")
 
 graph = snap.LoadEdgeList(snap.PUNGraph, "edges.csv", 0, 1, ',')
-# graph.Dump()
-
-#Visualize graph:
-snap.DrawGViz(graph, snap.gvlNeato, "output/graph_small.png", "graph visualize", True)
+# graph.Dump()  #show graph information
 
 list_comunity , modularity = comunityDetect(graph)
 
 print "list comunity: ", list_comunity
 print "Modularity of the network: %f" % modularity
 
+visualize_graph(list_comunity)
