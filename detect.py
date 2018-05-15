@@ -63,20 +63,28 @@ def comunityDetect(graph):
     CmtyV = snap.TCnComV()
     modularity = snap.CommunityGirvanNewman(graph, CmtyV)
     # modularity = snap.CommunityCNM(graph, CmtyV)
+    
+    list_comunity = []
     for Cmty in CmtyV:
-        print "Community: "
+        comunity = []
         for NI in Cmty:
-            print NI
-    print "The modularity of the network is %f" % modularity
-
+            comunity.append(NI)
+        
+        list_comunity.append(comunity)
+    
+    return list_comunity, modularity
 
 
 # prepare_data("friends_list.yaml", "output/dict_bigdata.csv", "output/edges_bigdata.csv")
 
 graph = snap.LoadEdgeList(snap.PUNGraph, "edges.csv", 0, 1, ',')
-graph.Dump()
+# graph.Dump()
 
 #Visualize graph:
 snap.DrawGViz(graph, snap.gvlNeato, "output/graph_small.png", "graph visualize", True)
 
-comunityDetect(graph)
+list_comunity , modularity = comunityDetect(graph)
+
+print "list comunity: ", list_comunity
+print "Modularity of the network: %f" % modularity
+
