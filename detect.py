@@ -117,9 +117,12 @@ def extract_top_nodes(edges_big_file, edges_extracted_file, top_n):
 
 # prepare_data("bigdata/friends_list.yaml", "bigdata/dict_bigdata.csv", "bigdata/edges_bigdata.csv")
 
-edges_file = "edges_extracted.csv"
-extract_top_nodes("bigdata/edges_bigdata.csv", edges_file, 100)
+edges_file = "edges_150.csv"
+num_nodes = 150
+graph_name = "graph-150nodes.png"
 
+
+extract_top_nodes("bigdata/edges_bigdata.csv", edges_file, num_nodes)
 graph = snap.LoadEdgeList(snap.PUNGraph, edges_file, 0, 1, '\t')
 # graph.Dump()  #show graph information
 
@@ -129,4 +132,4 @@ print "list comunity: ", list_comunity
 print "len list comunity: ", len(list_comunity)
 print "Modularity of the network: %f" % modularity
 
-visualize_graph(edges_file,"graph-100nodes.png", list_comunity)
+visualize_graph(edges_file, graph_name, list_comunity)
