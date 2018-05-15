@@ -4,74 +4,79 @@ import csv
 import numpy as np
 
 
-def prepare_data():
+def prepare_data(yaml_input, dict_node_file, graph_file):
 
-    pairs = yaml.load(open('friend_small.yaml','r'))
+    pairs = yaml.load(open(yaml_input,'r'))
     id = 1
-    friends = {}
+    nodes = {}
 
     for pair in pairs:
         for friend in pair:
-            if not friend in friends:
-                friends[friend] = id
+            if not friend in nodes:
+                nodes[friend] = id
                 id +=1
         
-    save_id_to_csv(friends)
+    save_dict_to_csv(dict_node_file,nodes)
 
     list_edge = []
     for pair in pairs:
-        edge = [friends[pair[0]], friends[pair[1]]]
+        edge = [nodes[pair[0]], nodes[pair[1]]]
         list_edge.append(edge)
-    # print "num edges:", len(list_edge)
     
-    with open("edges.csv", "wb") as f:
+    with open(graph_file, "wb") as f:
         writer = csv.writer(f)
         writer.writerows(list_edge)
 
 
 
-def save_id_to_csv(dic_ids):
-    with open('dict_ids.csv', 'wb') as csv_file:
+def save_dict_to_csv(dict_node_file,node_names):
+    with open(dict_node_file, 'wb') as csv_file:
         writer = csv.writer(csv_file)
-        for key, value in dic_ids.items():
+        for key, value in node_names.items():
             writer.writerow([key, value])
 
-def load_friends():
-    with open('dict_ids.csv', 'rb') as csv_file:
+def load_nodes(dict_node_file):
+    with open(dict_node_file, 'rb') as csv_file:
         reader = csv.reader(csv_file)
         dict_ids = dict(reader)
     return dict_ids
 
 
-def creat_graph(egdes):
+def creat_graph(nodes_file, egdes_files):
+    nodes = load_nodes(nodes_file)
+    edges = np.genfromtxt(egdes_files,delimiter=',', dtype=int)
+    
     graph = snap.TUNGraph.New()
-
-    nodes = load_friends()
     for key, node in nodes.items():
         node = int(node)
         graph.AddNode(node)
-    for edge in egdes:
+    for edge in edges:
         graph.AddEdge(edge[0], edge[1])
-
+    
+    print "Number node: ", graph.GetNodes() 
+    print "Number edge:", graph.GetEdges()
+    
     return graph
 
+def comunityDetect(graph):
 
-# prepare_data()
-# friends = load_friends()
-# print "num nodes:" , len(friends)
+    CmtyV = snap.TCnComV()
+    modularity = snap.CommunityGirvanNewman(graph, CmtyV)
+    # modularity = snap.CommunityCNM(graph, CmtyV)
+    for Cmty in CmtyV:
+        print "Community: "
+        for NI in Cmty:
+            print NI
+    print "The modularity of the network is %f" % modularity
 
-edges = np.genfromtxt('edges.csv',delimiter=',', dtype=int)
-print edges.shape
-graph = creat_graph(edges)
-print graph.GetNodes()
-print graph.GetEdges()
-snap.DrawGViz(graph, snap.gvlNeato, "graph_undirected.png", "graph 2", True)
 
-CmtyV = snap.TCnComV()
-modularity = snap.CommunityGirvanNewman(graph, CmtyV)
-for Cmty in CmtyV:
-    print "Community: "
-    for NI in Cmty:
-        print NI
-print "The modularity of the network is %f" % modularity
 
+# prepare_data("friends_list.yaml", "output/dict_bigdata.csv", "output/edges_bigdata.csv")
+
+graph = snap.LoadEdgeList(snap.PUNGraph, "edges.csv", 0, 1, ',')
+graph.Dump()
+
+#Visualize graph:
+snap.DrawGViz(graph, snap.gvlNeato, "output/graph_small.png", "graph visualize", True)
+
+comunityDetect(graph)
