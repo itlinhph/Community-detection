@@ -63,8 +63,8 @@ def creat_graph(nodes_file, edges_files):
 def comunityDetect(graph):
 
     CmtyV = snap.TCnComV()
-    modularity = snap.CommunityGirvanNewman(graph, CmtyV)
-    # modularity = snap.CommunityCNM(graph, CmtyV)
+    # modularity = snap.CommunityGirvanNewman(graph, CmtyV)
+    modularity = snap.CommunityCNM(graph, CmtyV)
     
     list_comunity = []
     for Cmty in CmtyV:
@@ -117,9 +117,9 @@ def extract_top_nodes(edges_big_file, edges_extracted_file, top_n):
 
 # prepare_data("bigdata/friends_list.yaml", "bigdata/dict_bigdata.csv", "bigdata/edges_bigdata.csv")
 
-edges_file = "edges_150.csv"
-num_nodes = 150
-graph_name = "graph-150nodes.png"
+edges_file = "edges_1000.csv"
+num_nodes = 1000
+graph_name = "graph-1000nodes.png"
 
 
 extract_top_nodes("bigdata/edges_bigdata.csv", edges_file, num_nodes)
